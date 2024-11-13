@@ -32,7 +32,7 @@ else
 fi
 
 # run search query and store metadata
-esearch -db $project -query $project  | efetch -format runinfo > ${project}_metadata.txt
+esearch -db sra -query $project  | efetch -format runinfo > ${project}_metadata.txt
 
 
 # fetch accessions numbers from metada file into a text file
