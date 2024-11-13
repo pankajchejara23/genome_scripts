@@ -32,11 +32,11 @@ else
 fi
 
 # run search query and store metadata
-esearch -db sra -query $project  | efetch -format runinfo > ${sra}_metadata.txt
+esearch -db $project -query $project  | efetch -format runinfo > ${project}_metadata.txt
 
 
 # fetch accessions numbers from metada file into a text file
-cat ${sra}_metadata.txt | cut -f 1 -d ',' |grep "SRR" > ${sra}_sra_id.txt
+cat ${project}_metadata.txt | cut -f 1 -d ',' |grep "SRR" > ${project}_sra_id.txt
 
 
 # change directory to raw_data
@@ -44,6 +44,6 @@ cd raw_data
 echo "  changing to raw_data directory"
 
  # download sra file, fastq file and zip fastq file into gz
-cat ../${sra}_sra_id.txt | while read sra_id; do prefetch $sra_id; fasterq-dump $sra_id; gzip ${sra_id}*.fastq;done
+cat ../${project}_sra_id.txt | while read sra_id; do prefetch $sra_id; fasterq-dump $sra_id; gzip ${sra_id}*.fastq;done
 
 echo "Sequence data has been downloaded successfully"
