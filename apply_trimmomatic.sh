@@ -18,5 +18,5 @@ for sample in "${samples[@]}"; do
   forward="${sample}_R1_001.fastq.gz"
   backward="${sample}_R2_001.fastq.gz"
   baseout="${sample}.fastq.gz"
-  printf "\n trimmomatic -PE -threads 20 $forward $backward -baseout $baseout"
+  printf "\n trimmomatic -PE -threads 20 $forward $backward -baseout $baseout  CROP:200"
 done;
