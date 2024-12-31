@@ -1,12 +1,34 @@
 #!/bin/sh
 # This script automates the process of downloading dataset from NCBI along with metadata infromation.
-## Usage: ncbi_downloader
+## Usage: ./ncbi_downloader.sh
 
 ## author: pankaj chejara
 ## email: pankaj.chejara@metrosert.ee
 
-echo "Enter the project identifier (hint: it will be starting from PR...)"
-read project
+# Function to display usage
+usage() {
+  echo "Usage: $0 -p <project_identifier>"
+  echo "  -p    Project identifier (e.g., PRJXXXX)"
+  exit 1
+}
+
+# Parse command-line options using getopts
+while getopts ":p:" opt; do
+  case $opt in
+    p)
+      project=$OPTARG
+      ;;
+    *)
+      usage
+      ;;
+  esac
+done
+
+# Check if the project identifier was provided
+if [ -z "$project" ]; then
+  echo "Error: Project identifier is required."
+  usage
+fi
 
 echo "Preparing for the download"
 
