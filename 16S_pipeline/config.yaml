@@ -1,0 +1,29 @@
+
+project: trial
+scratch: /Users/pankaj/Documents/Metrosert/public_dataset/zakular2014
+raw_data: partial_raw_data
+outputDIR: trial
+manifest: manifest_partial.csv
+metadata: metadata_partial.tsv
+
+## 16S adapters from Zackular et al., 2014
+primerF: GTGCCAGCMGCCGCGGTAA
+primerR: GGACTACHVGGGTWTCTAAT
+primer_err: 0.4
+primer_overlap: 3
+
+## Reference database
+database: silva-138.1-ssu-nr99-seqs-515f-806r.qza
+database_classifier: silva_classifier.qza
+database_tax: silva-138.1-ssu-nr99-tax.qza
+
+## DADA2 - ASV flags
+truncation_err: 2
+truncation_len-f: 150
+truncation_len-r: 140
+truncation_err: 2
+quality_err: 2
+
+## Diversity metrics
+sampling_depth: 500
+
