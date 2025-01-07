@@ -52,7 +52,7 @@ for filename in ./$input_dir/*.fastq.gz; do
   done
 
 # Add header to the TSV file
-echo "sample-id    forward-absolute-filepath    reverse-absolute-filepath" > manifest.tsv
+echo "sample-id,absolute-filepath,direction" > manifest.tsv
 
 # Iterate over each unique sample id
 for sample in "${samples[@]}"; do
@@ -66,6 +66,7 @@ for sample in "${samples[@]}"; do
   sampleid=$(echo $sample | sed -e 's/_.*//')
 
   # Adding row to the TSV file
-  echo "$sampleid    $forward    $backward" >> manifest.csv
+  echo "$sampleid,$forward,forward" >> manifest_partial.csv
+  echo "$sampleid,$backward,reverse" >> manifest_partial.csv
 
 done;
