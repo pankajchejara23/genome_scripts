@@ -70,5 +70,5 @@ for sample in "${samples[@]}"; do
   baseout="./${output_dir}/${sample}.fastq.gz"
 
   # Apply trimmomatic command
-  trimmomatic PE -threads 20 $forward $backward -baseout $baseout CROP:200"
+  trimmomatic PE -threads 20 $forward $backward -baseout $baseout CROP:200
 done;
