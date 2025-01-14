@@ -51,8 +51,13 @@ rule all:
     aligned_masked = SCRATCH + "/" + OUTPUTDIR + "/asv/" + "tree/" + PROJ + "-masked-aligned-rep-seqs.qza",
     unrooted_tree = SCRATCH + "/" + OUTPUTDIR + "/asv/" + "tree/" + PROJ + "-unrooted-tree.qza",
     rooted_tree = SCRATCH + "/" + OUTPUTDIR + "/asv/" + "tree/" + PROJ + "-rooted-tree.qza",
+    # Relative frequency 
+    table_phyla = SCRATCH + "/" + OUTPUTDIR + "/asv/" +  PROJ + "-phyla-table.qza",
+    rel_table = SCRATCH + "/" + OUTPUTDIR + "/asv/" +  PROJ + "-rel-phyla-table.qza",
+    biom_table = SCRATCH + "/" + OUTPUTDIR + "/asv/rel-table/feature-table.biom",
+    rel_table_tsv = SCRATCH + "/" + OUTPUTDIR + "/asv/" +  PROJ + "-rel-freq-table.tsv",
     # Diversity metrics
-    output_dir = directory(SCRATCH + "/qiime2/diversity")
+    output_dir = directory(SCRATCH + "/" + OUTPUTDIR + "/diversity")
 
 
 ##########################################################
@@ -67,9 +72,11 @@ rule import_qiime:
     SCRATCH + "/" + OUTPUTDIR + "/logs/" + PROJ + "_q2.log"
   params:
     type="SampleData[PairedEndSequencesWithQuality]",
-    input_format="PairedEndFastqManifestPhred33"
+    input_format="PairedEndFastqManifestPhred33",
   shell:
-    """qiime tools import \
+    """
+    export TMPDIR={config[tmp_dir]}
+    qiime tools import \
     --type {params.type} \
     --input-path {input} \
     --output-path {output.q2_import} \
@@ -212,6 +219,61 @@ rule gen_tax:
 
 
 ##########################################################
+#                 RELATIVE FREQUENCY TABLE GENERATION
+##########################################################
+rule taxa_collapse:
+  input:
+    table = SCRATCH + "/" + OUTPUTDIR + "/asv/" + PROJ + "-asv-table.qza",
+    sklearn = SCRATCH + "/" + OUTPUTDIR + "/asv/" +  PROJ + "-tax_sklearn.qza"
+  output:
+    table_phyla = SCRATCH + "/" + OUTPUTDIR + "/asv/" +  PROJ + "-phyla-table.qza"
+  log:
+    SCRATCH + "/" + OUTPUTDIR + "/logs/" + PROJ +  "_taxa_collapse_q2.log"
+  shell:
+    """qiime taxa collapse \
+	  --i-table {input.table} \
+	  --i-taxonomy {input.sklearn} \
+    --p-level 6 \
+	  --o-collapsed-table {output.table_phyla}"""
+
+
+rule rel_freq_table:
+  input:
+    table = SCRATCH + "/" + OUTPUTDIR + "/asv/" +  PROJ + "-phyla-table.qza"
+  output:
+    rel_table = SCRATCH + "/" + OUTPUTDIR + "/asv/" +  PROJ + "-rel-phyla-table.qza"
+  log:
+    SCRATCH + "/" + OUTPUTDIR + "/logs/" + PROJ +  "_rel_freq_q2.log"
+  shell:
+    """qiime feature-table relative-frequency \
+     --i-table {input.table} \
+     --o-relative-frequency-table {output.rel_table}"""
+
+rule rel_freq_table_biom:
+  input:
+    rel_table = SCRATCH + "/" + OUTPUTDIR + "/asv/" +  PROJ + "-rel-phyla-table.qza"
+  output:
+    biom_table = SCRATCH + "/" + OUTPUTDIR + "/asv/" + "rel-table/feature-table.biom"
+  params:
+    directory(SCRATCH + "/" + OUTPUTDIR + "/asv/" + "rel-table/")
+  log:
+    SCRATCH + "/" + OUTPUTDIR + "/logs/" + PROJ +  "_rel_freq_biom_q2.log"
+  shell:"""qiime tools export \
+     --input-path {input.rel_table} \
+     --output-path {params}
+  """
+
+rule biom_tsv:
+  input:
+    biom_table = SCRATCH + "/" + OUTPUTDIR + "/asv/" + "rel-table/feature-table.biom"
+  output:
+    rel_table_tsv = SCRATCH + "/" + OUTPUTDIR + "/asv/" +  PROJ + "-rel-freq-table.tsv"
+  log:
+    SCRATCH + "/" + OUTPUTDIR + "/logs/" + PROJ +  "_rel_tsv_q2.log"
+  shell:
+    "biom convert -i {input.biom_table} -o {output.rel_table_tsv} --to-tsv"
+
+##########################################################
 #                 PHYLOGENETIC TREE 
 ##########################################################
 rule phy_tree:
@@ -242,7 +304,7 @@ rule div_met:
      rooted_tree = SCRATCH + "/" + OUTPUTDIR + "/asv/" + "tree/" + PROJ + "-rooted-tree.qza",
      table = SCRATCH + "/" + OUTPUTDIR + "/asv/" + PROJ + "-asv-table.qza"
   output:
-     output_dir = directory(SCRATCH + "/qiime2/diversity")
+     output_dir = directory(SCRATCH + "/" + OUTPUTDIR + "/diversity")
   
   log:
     SCRATCH + "/" + OUTPUTDIR + "/logs/" + PROJ + "_phylogeneticTREE_q2.log"
