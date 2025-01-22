@@ -1,0 +1,116 @@
+# Snakemake file - Generate reference DB for classifcation
+# Pankaj chejara
+
+# Base snakefile: https://github.com/shu251/tagseq-qiime2-snakemake/blob/master/Snakefile-asv
+
+configfile: "config.yaml"
+
+
+import io
+import os
+import pandas as pd
+import pathlib
+
+##########################################################
+#                 SET CONFIG VARS
+##########################################################
+
+PROJ = config["project"]
+SCRATCH = config["scratch"]
+OUTPUTDIR = config['outputDIR']
+
+# Database information
+VERSION = config["version"]
+TARGET = config["target"]
+INCLUDE_SPECIES = config["include_species"]
+
+
+rule all:
+  input:
+    silva_seq = SCRATCH + "/" + OUTPUTDIR +"/silva-" + PROJ + "-rna-seqs.qza",
+    silva_tax = SCRATCH + "/" + OUTPUTDIR +"/silva-" + PROJ + "-tax.qza",
+    # DNA sequence
+    silva_dna_seq = SCRATCH + "/" + OUTPUTDIR +"/silva-" + PROJ + "-dna-seqs.qza",
+    # V4 region
+    silva_v4_seq = SCRATCH + "/" + OUTPUTDIR +"/silva-" + PROJ + "-dna-v4-seqs.qza",
+    # Classifier
+    classifier = SCRATCH + "/" + OUTPUTDIR + "/asv/" + PROJ + "-silva-classifier.qza",
+
+##########################################################
+#                 DOWNLOAD DATA 
+##########################################################
+rule download_silva:
+  input:
+    
+  output:
+    silva_seq = SCRATCH + "/" + OUTPUTDIR +"/silva-" + PROJ + "-rna-seqs.qza",
+    silva_tax = SCRATCH + "/" + OUTPUTDIR +"/silva-" + PROJ + "-tax.qza"
+  log:
+    SCRATCH + "/" + OUTPUTDIR + "/logs/" + PROJ + "-download_silva_q2.log"
+  shell:
+    """
+    export TMPDIR={config[tmp_dir]}
+    qiime rescript get-silva-data \
+    --p-version {VERSION} \
+    --p-target {TARGET} \
+    --o-silva-sequences {output.silva_seq} \
+    --o-silva-taxonomy {output.silva_tax}
+    """
+
+##########################################################
+#                 RNA TO DNA
+##########################################################
+
+rule rna_to_dna:
+  input:
+    silva_seq = SCRATCH + "/" + OUTPUTDIR +"/silva-" + PROJ + "-rna-seqs.qza"
+  output:
+    silva_dna_seq = SCRATCH + "/" + OUTPUTDIR +"/silva-" + PROJ + "-dna-seqs.qza"
+  log:
+     SCRATCH + "/" + OUTPUTDIR + "/logs/" + PROJ + "-rna_to_dna_q2.log"
+
+  shell:
+    """qiime rescript reverse-transcribe \
+    --i-rna-sequences {input.silva_seq} \
+    --o-dna-sequences {output.silva_dna_seq}"""
+
+
+##########################################################
+#                 EXTRACT V4
+##########################################################
+
+rule extract_v4:
+  input:
+    silva_dna_seq = SCRATCH + "/" + OUTPUTDIR +"/silva-" + PROJ + "-dna-seqs.qza",
+  output:
+    silva_v4_seq = SCRATCH + "/" + OUTPUTDIR +"/silva-" + PROJ + "-dna-v4-seqs.qza",
+  log:
+    SCRATCH + "/" + OUTPUTDIR + "/logs/" + PROJ +  "_v4_q2.log"
+  shell:
+    """
+     qiime feature-classifier extract-reads \
+    --i-sequences {input.silva_dna_seq} \
+    --p-f-primer {config[primerF]} \
+    --p-r-primer {config[primerR]} \
+    --p-n-jobs 2 \
+    --p-read-orientation 'forward' \
+    --o-reads {output.silva_v4_seq}
+    """
+
+##########################################################
+#                 TRAIN CLASSIFIER
+##########################################################
+
+rule train:
+  input:
+    silva_v4_seq = SCRATCH + "/" + OUTPUTDIR +"/silva-" + PROJ + "-dna-v4-seqs.qza",
+    silva_tax = SCRATCH + "/" + OUTPUTDIR +"/silva-" + PROJ + "-tax.qza"
+  output:
+    classifier = SCRATCH + "/" + OUTPUTDIR + "/asv/" + PROJ + "-silva-classifier.qza",
+  log:
+    SCRATCH + "/" + OUTPUTDIR + "/logs/" + PROJ + "_train_q2.log"
+  shell:
+    """qiime feature-classifier fit-classifier-naive-bayes \
+    --i-reference-reads {input.silva_v4_seq} \
+    --i-reference-taxonomy {input.silva_tax} \
+    --o-classifier {output.classifier}"""

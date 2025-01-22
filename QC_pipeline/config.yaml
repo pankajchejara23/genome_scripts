@@ -1,0 +1,18 @@
+# Basic setup
+project: silva_db
+scratch: /Users/pankaj/Documents/Metrosert/public_dataset/zakular2014
+outputDIR: rdb
+tmp_dir: ./
+## 16S adapters from Zackular et al., 2014
+primerF: GTGCCAGCMGCCGCGGTAA
+primerR: GGACTACHVGGGTWTCTAAT
+primer_err: 0.4
+primer_overlap: 3
+
+## Reference database
+version: 138.1
+target: SSURef_NR99
+include_species: true
+
+
+
