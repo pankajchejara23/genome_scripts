@@ -26,13 +26,14 @@ NUMS = set(NUMS)
 
 print(SAMPLES)
 print(NUMS)
-print(expand(SCRATCH + "/" + INPUTDIR + "/" + "{sample}_L001_{num}.fastqc.gz",sample=SAMPLES,num=NUMS))
+
 # all output out
 # *********************************************************************
 rule all:
     input:
         expand(SCRATCH + "/" + OUTPUTDIR + "/" + "{sample}_L001_{num}_fastqc.html",sample=SAMPLES,num=NUMS),
         expand(SCRATCH + "/" + OUTPUTDIR + "/" + "{sample}_L001_{num}_fastqc.zip",sample=SAMPLES,num=NUMS),
+        SCRATCH + "/" + "multiqc/multiqc_report.html"
 
 # fastqc - check quality of raw fastq-files and merge fastqc reports
 # *********************************************************************
@@ -54,5 +55,17 @@ rule fastqc:
             2>&1
         """
 
-
+rule multiqc:
+    input:
+        SCRATCH + "/" + OUTPUTDIR + "/"
+    output:
+        SCRATCH + "/" + "multiqc/multiqc_report.html"
+    log:
+        SCRATCH + "/multiqc" + "/log/multiqc.log"
+    params:
+        report_dir=SCRATCH + "/multiqc"  + "/"
+    shell:
+        """
+        multiqc {input} -o {params.report_dir} > {log} 2>&1
+        """
 
