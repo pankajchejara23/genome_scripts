@@ -1,0 +1,58 @@
+# A Snakemake pipeline for quality control of Illumina next-generation
+#                            sequencing data
+# *********************************************************************
+
+configfile: "config.yaml"
+
+
+import io
+import os
+import pandas as pd
+import pathlib
+
+INPUTDIR = config['inputDIR']
+OUTPUTDIR = config['outputDIR']
+SCRATCH = config["scratch"]
+SUF = config['suffix']
+
+R1_SUF = str(config["r1_suf"])
+R2_SUF = str(config["r2_suf"])
+
+# global wild cards of sample and pairpair list
+(SAMPLES,NUMS) = glob_wildcards(SCRATCH+"/" + INPUTDIR +"/"+"{sample}_L001_{num}.fastq.gz")
+
+SAMPLES = set(SAMPLES)
+NUMS = set(NUMS)
+
+print(SAMPLES)
+print(NUMS)
+print(expand(SCRATCH + "/" + INPUTDIR + "/" + "{sample}_L001_{num}.fastqc.gz",sample=SAMPLES,num=NUMS))
+# all output out
+# *********************************************************************
+rule all:
+    input:
+        expand(SCRATCH + "/" + OUTPUTDIR + "/" + "{sample}_L001_{num}_fastqc.html",sample=SAMPLES,num=NUMS),
+        expand(SCRATCH + "/" + OUTPUTDIR + "/" + "{sample}_L001_{num}_fastqc.zip",sample=SAMPLES,num=NUMS),
+
+# fastqc - check quality of raw fastq-files and merge fastqc reports
+# *********************************************************************
+rule fastqc:
+    input:
+        SCRATCH + "/" + INPUTDIR + "/" + "{sample}_L001_{num}.fastq.gz"
+    output:
+        SCRATCH + "/" + OUTPUTDIR + "/" + "{sample}_L001_{num}_fastqc.html",
+        SCRATCH + "/" + OUTPUTDIR + "/" + "{sample}_L001_{num}_fastqc.zip",
+    log:
+        SCRATCH + "/" + OUTPUTDIR + "/" + "log/fastqc_{sample}_{num}.log",
+    params:
+        outdir = SCRATCH + "/" + OUTPUTDIR + "/"
+    shell:
+        """
+        fastqc  \
+            --outdir {params.outdir}\
+            {input} > {log} \
+            2>&1
+        """
+
+
+
